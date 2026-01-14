@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Tra cứu Log Token</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #f4f4f9; color: #333; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h2 { color: #2c3e50; border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-top: 0; }
+        .form-group { margin-bottom: 20px; background: #f9f9f9; padding: 20px; border-radius: 8px; border: 1px solid #eee; }
+        label { font-weight: bold; margin-bottom: 8px; display: block; }
+        input[type="text"] { padding: 12px; width: 300px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
+        button { padding: 12px 25px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        button:hover { background-color: #0056b3; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #007bff; color: white; white-space: nowrap; }
+        tr:nth-child(even) { background-color: #f8f9fa; }
+        
+        .loading { color: #d9534f; font-weight: bold; display: none; margin-top: 10px; }
+        .success-box { background-color: #d4edda; color: #155724; padding: 15px; border-radius: 4px; border: 1px solid #c3e6cb; margin-bottom: 20px; }
+        .error-box { background-color: #f8d7da; color: #721c24; padding: 15px; border-radius: 4px; border: 1px solid #f5c6cb; margin-bottom: 20px; }
+
+        .ip-addr { font-weight: bold; color: #d9534f; }
+        .remark-col { color: #2c3e50; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .user-col { font-weight: bold; color: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Tra cứu lịch sử truy cập Token</h2>
+        
+        <form action="/search" method="POST" onsubmit="document.querySelector('.loading').style.display='block'">
+            <div class="form-group">
+                <label for="tokenId">Nhập Token HID (Mã trên thiết bị):</label>
+                <input type="text" id="tokenId" name="tokenId" placeholder="Ví dụ: 291C11E4..." required value="<%= typeof searchToken !== 'undefined' ? searchToken : '' %>">
+                <button type="submit">🔍 Tra cứu</button>
+                <div class="loading">⏳ Đang truy vấn Database và quét Log...</div>
+            </div>
+        </form>
+
+        <% if (typeof error !== 'undefined' && error) { %>
+            <div class="error-box"><strong>Lỗi:</strong> <%= error %></div>
+        <% } %>
+
+        <% if (typeof foundInfo !== 'undefined' && foundInfo) { %>
+            <div class="success-box">
+                <div style="margin-bottom: 10px; border-bottom: 1px solid #c3e6cb; padding-bottom: 10px;">
+                    <strong>Kết quả tra cứu Database:</strong><br>
+                    Token Code: <b style="font-size: 1.2em"><%= foundInfo.code %></b>
+                </div>
+                <table style="width: 100%; font-size: 0.9em; background: rgba(255,255,255,0.6);">
+                    <thead>
+                        <tr style="background: #c3e6cb;">
+                            <th>STT</th>
+                            <th>Serial Number</th>
+                            <th>Mã Số Thuế</th>
+                            <th>Tên Công Ty</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% foundInfo.allCerts.forEach(function(cert, index) { %>
+                            <tr>
+                                <td style="text-align: center;"><%= index + 1 %></td>
+                                <td style="font-weight: bold; color: #0056b3;"><%= cert.sn %></td>
+                                <td><%= cert.mst %></td>
+                                <td><%= cert.company %></td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        <% } %>
+
+        <% if (typeof results !== 'undefined' && results.length > 0) { %>
+            <h3>Lịch sử hoạt động (<%= results.length %> dòng)</h3>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th width="15%">Thời gian</th>
+                            <th width="15%">IP Address</th>
+                            <th width="40%">Nội dung (Remark)</th>
+                            <th width="15%">Người thực hiện</th>
+                            <th width="15%">Nguồn (File/DB)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% results.forEach(function(item) { %>
+                            <tr>
+                                <td><%= item.time %></td>
+                                <td class="ip-addr"><%= item.ip %></td>
+                                <td class="remark-col" title="<%= item.remark %>"><%= item.remark %></td>
+                                <td class="user-col"><%= item.createdBy %></td>
+                                <td style="color: gray; font-size: 0.9em;">
+                                    <%= item.file %>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        <% } else if (typeof results !== 'undefined' && typeof foundInfo !== 'undefined') { %>
+            <div style="text-align: center; padding: 20px; color: #666;">
+                <p>Không có dữ liệu log nào.</p>
+            </div>
+        <% } %>
+    </div>
+</body>
+</html>
